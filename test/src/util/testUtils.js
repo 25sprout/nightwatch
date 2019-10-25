@@ -1,64 +1,121 @@
-var assert = require('assert');
-var common = require('../../common.js');
-var Utils = common.require('util/utils.js');
+const assert = require('assert');
+const common = require('../../common.js');
+const Utils = common.require('util/utils.js');
 
-module.exports = {
-  'test Utils' : {
-    testFormatElapsedTime : function() {
-      
-      var resultMs = Utils.formatElapsedTime(999);
-      assert.equal(resultMs, '999ms');
+describe('test Utils', function() {
 
-      var resultSec = Utils.formatElapsedTime(1999);
-      assert.equal(resultSec, '1.999s');
+  it('testFormatElapsedTime', function() {
 
-      var resultMin = Utils.formatElapsedTime(122299, true);
-      assert.equal(resultMin, '2m 2s / 122299ms');
-    },
+    let resultMs = Utils.formatElapsedTime(999);
+    assert.equal(resultMs, '999ms');
 
-    testMakeFnAsync : function() {
-      function asyncFn(cb) {
-        cb();
-      }
+    let resultSec = Utils.formatElapsedTime(1999);
+    assert.equal(resultSec, '1.999s');
 
-      function syncFn() {}
+    let resultMin = Utils.formatElapsedTime(122299, true);
+    assert.equal(resultMin, '2m 2s / 122299ms');
+  });
 
-      var convertedFn = Utils.makeFnAsync(1, syncFn);
-      var called = false;
-      convertedFn(function() {
-        called = true;
-      });
-
-      assert.equal(Utils.makeFnAsync(1, asyncFn), asyncFn);
-      assert.ok(called);
-    },
-
-    testCheckFunction : function() {
-      var g = {
-        fn : function() {}
-      };
-
-      var o = {
-        fn : false
-      };
-
-      var x = {
-        y : {
-          testFn : function() {}
-        }
-      };
-
-      assert.ok(Utils.checkFunction('fn', g));
-      assert.ok(!Utils.checkFunction('fn', o));
-      assert.ok(Utils.checkFunction('testFn', x.y));
-    },
-
-    testGetTestSuiteName : function() {
-
-      assert.equal(Utils.getTestSuiteName('test-case-one'), 'Test Case One');
-      assert.equal(Utils.getTestSuiteName('test_case_two'), 'Test Case Two');
-      assert.equal(Utils.getTestSuiteName('test.case.one'), 'Test Case One');
-      assert.equal(Utils.getTestSuiteName('testCaseOne'), 'Test Case One');
+  it('testMakeFnAsync', function() {
+    function asyncFn(cb) {
+      cb();
     }
-  }
-};
+
+    function syncFn() {
+    }
+
+    let convertedFn = Utils.makeFnAsync(1, syncFn);
+    let called = false;
+    convertedFn(function() {
+      called = true;
+    });
+
+    assert.equal(Utils.makeFnAsync(1, asyncFn), asyncFn);
+    assert.ok(called);
+  });
+
+  it('testCheckFunction', function() {
+    let g = {
+      fn: function() {
+      }
+    };
+
+    let o = {
+      fn: false
+    };
+
+    let x = {
+      y: {
+        testFn: function() {
+        }
+      }
+    };
+
+    assert.ok(Utils.checkFunction('fn', g));
+    assert.ok(!Utils.checkFunction('fn', o));
+    assert.ok(Utils.checkFunction('testFn', x.y));
+  });
+
+  it('testGetTestSuiteName', function() {
+
+    assert.equal(Utils.getTestSuiteName('test-case-one'), 'Test Case One');
+    assert.equal(Utils.getTestSuiteName('test_case_two'), 'Test Case Two');
+    assert.equal(Utils.getTestSuiteName('test.case.one'), 'Test Case One');
+    assert.equal(Utils.getTestSuiteName('testCaseOne'), 'Test Case One');
+  });
+
+  it('testFlattenArrayDeep', function() {
+
+    assert.throws(() => {
+      Utils.flattenArrayDeep(null);
+    }, Error);
+    assert.throws(() => {
+      Utils.flattenArrayDeep({name: 'test'});
+    }, Error);
+    assert.throws(() => {
+      Utils.flattenArrayDeep('test');
+    }, Error);
+  });
+
+  it('testStripControlChars', function() {
+
+    assert.doesNotThrow(() => Utils.stripControlChars(null));
+    assert.equal(
+      Utils.stripControlChars('\x00rendered output'),
+      'rendered output'
+    );
+    assert.equal(
+      Utils.stripControlChars('rendered \x1Foutput'),
+      'rendered output'
+    );
+    assert.equal(
+      Utils.stripControlChars('rendered output\x7F'),
+      'rendered output'
+    );
+    assert.equal(
+      Utils.stripControlChars('\x00rendered\x1F \x1Boutput\x9F\x00'),
+      'rendered output'
+    );
+    assert.equal(
+      Utils.stripControlChars(
+        '\x00rendered output\nrendered \x1Foutput\nrendered output\x7F'
+      ),
+      'rendered output\nrendered output\nrendered output'
+    );
+    assert.equal(
+      Utils.stripControlChars(
+        '\x00rendered output\rrendered \x1Foutput\rrendered output\x7F'
+      ),
+      'rendered output\rrendered output\rrendered output'
+    );
+  });
+
+  it('testRelativeUrl', function() {
+    assert.equal(Utils.relativeUrl('https://nightwatchjs.org'), false);
+    assert.equal(Utils.relativeUrl('http://nightwatchjs.org'), false);
+    assert.equal(Utils.relativeUrl('chrome-extension://pkehgijcmpdhfbdbbnkijodmdjhbjlgp/skin/options.html'), false);
+    assert.equal(Utils.relativeUrl('nightwatchjs.org'), true);
+    assert.equal(Utils.relativeUrl('nightwatchjs.org/guide'), true);
+    assert.equal(Utils.relativeUrl('/guide'), true);
+  });
+});

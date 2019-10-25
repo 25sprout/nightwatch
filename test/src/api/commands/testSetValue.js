@@ -1,30 +1,48 @@
-var MockServer  = require('../../../lib/mockserver.js');
-var assert = require('assert');
-var Nightwatch = require('../../../lib/nightwatch.js');
-var MochaTest = require('../../../lib/mochatest.js');
+const assert = require('assert');
+const MockServer  = require('../../../lib/mockserver.js');
+const CommandGlobals = require('../../../lib/globals/commands.js');
 
-module.exports = MochaTest.add('setValue', {
+describe('setValue', function() {
 
-  'client.setValue()' : function(done) {
-    var client = Nightwatch.api();
+  before(function(done) {
+    CommandGlobals.beforeEach.call(this, done);
+  });
 
+  after(function(done) {
+    CommandGlobals.afterEach.call(this, done);
+  });
+
+  it('client.setValue()', function(done) {
     MockServer.addMock({
       url : '/wd/hub/session/1352110219202/element/0/value',
       method:'POST',
-      postdata : '{"value":["1"]}',
-      response : JSON.stringify({
+      postdata : {value:[ 'p', 'a', 's', 's', 'w', 'o', 'r', 'd' ]},
+      response : {
         sessionId: '1352110219202',
         status:0
+      }
+    });
+
+    this.client.api
+      .setValue('css selector', '#weblogin', 'password', function callback(result) {
+        assert.strictEqual(result.status, 0);
       })
-    });
+      .setValue('css selector', {
+        selector: '#weblogin',
+        timeout: 100
+      }, 'password', function callback(result) {
+        assert.strictEqual(result.status, 0);
+      })
+      .setValue({
+        selector: '#weblogin',
+        timeout: 100
+      }, 'password', function callback(result) {
+        assert.strictEqual(result.status, 0);
+      })
+      .setValue('#weblogin', 'password', function callback(result) {
+        assert.strictEqual(result.status, 0);
+      });
 
-    client.setValue('css selector', '#weblogin', '1', function callback(result) {
-      assert.equal(result.status, 0);
-    }).setValue('#weblogin', '1', function callback(result) {
-      assert.equal(result.status, 0);
-      done();
-    });
-
-    Nightwatch.start();
-  }
+    this.client.start(done);
+  });
 });

@@ -1,16 +1,21 @@
-var MockServer = require('../../../lib/mockserver.js');
-var assert = require('assert');
-var Nightwatch = require('../../../lib/nightwatch.js');
-var MochaTest = require('../../../lib/mochatest.js');
+const assert = require('assert');
+const MockServer  = require('../../../lib/mockserver.js');
+const CommandGlobals = require('../../../lib/globals/commands.js');
 
-module.exports = MochaTest.add('getCookies', {
-  'client.getCookies()': function (done) {
-    var client = Nightwatch.api();
+describe('getCookies', function() {
+  before(function(done) {
+    CommandGlobals.beforeEach.call(this, done);
+  });
 
+  after(function(done) {
+    CommandGlobals.afterEach.call(this, done);
+  });
+
+  it('client.getCookies()', function(done) {
     MockServer.addMock({
       url: '/wd/hub/session/1352110219202/cookie',
       method: 'GET',
-      response: JSON.stringify({
+      response: {
         sessionId: '1352110219202',
         status: 0,
         value: [{
@@ -18,34 +23,22 @@ module.exports = MochaTest.add('getCookies', {
           value: '123456',
           path: '/',
           domain: 'example.org',
-          secure: false,
-          class: 'org.openqa.selenium.Cookie',
-          hCode: 91423566
+          secure: false
         }]
-      })
+      }
+    }, true);
+
+    const api = this.client.api;
+    this.client.api.getCookies(function callback(result) {
+      assert.strictEqual(this, api);
+      assert.strictEqual(result.value.length, 1);
+      assert.strictEqual(result.value[0].name, 'test_cookie');
     });
 
-    client.getCookies(function callback(result) {
-      assert.equal(result.value.length, 1);
-      assert.equal(result.value[0].name, 'test_cookie');
-    });
+    this.client.start(done);
+  });
 
-    client.getCookie('test_cookie', function callback(result) {
-      assert.equal(result.name, 'test_cookie');
-      assert.equal(result.value, '123456');
-    });
-
-    client.getCookie('other_cookie', function callback(result) {
-      assert.equal(result, null);
-    });
-
-    Nightwatch.start(done);
-
-  },
-
-  'client.getCookies() - empty result': function (done) {
-    var client = Nightwatch.api();
-
+  it('client.getCookies() - empty result', function(done) {
     MockServer.addMock({
       url: '/wd/hub/session/1352110219202/cookie',
       method: 'GET',
@@ -54,12 +47,13 @@ module.exports = MochaTest.add('getCookies', {
         status: 0,
         value: []
       })
+    }, true);
+
+    this.client.api.getCookies(function callback(result) {
+      assert.ok(Array.isArray(result.value));
+      assert.strictEqual(result.value.length, 0);
     });
 
-    client.getCookie('other_cookie', function callback(result) {
-      assert.equal(result, null);
-    });
-
-    Nightwatch.start(done);
-  }
+    this.client.start(done);
+  });
 });

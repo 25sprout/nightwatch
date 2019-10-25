@@ -1,65 +1,82 @@
-var assert = require('assert');
-var common = require('../../../common.js');
-var MockServer = require('../../../lib/mockserver.js');
-var Nightwatch = require('../../../lib/nightwatch.js');
-var MochaTest = require('../../../lib/mochatest.js');
+const assert = require('assert');
+const Globals = require('../../../lib/globals.js');
 
-module.exports = MochaTest.add('windowSize', {
-  beforeEach: function () {
-    this.client = Nightwatch.client();
-    this.protocol = common.require('api/protocol.js')(this.client);
-  },
+describe('windowSize', function() {
+  before(function() {
+    Globals.protocolBefore.call(this);
+  });
 
-  testWindowSizeErrors: function () {
-    var protocol = this.protocol;
-
+  it('test .windowSize() errors', function() {
     assert.throws(
-      function () {
-        protocol.windowSize(function () {
-        });
-      }, 'First argument must be a window handle string.'
+      function() {
+        Globals.runApiCommand(null, 'windowSize', [function() {}]);
+      }.bind(this), /First argument must be a window handle string/
     );
 
     assert.throws(
-      function () {
-        protocol.windowSize('current', 'a', 10);
-      }, 'Width and height arguments must be passed as numbers.'
+      function() {
+        Globals.runApiCommand(null, 'windowSize', ['current', 'a', 10]);
+      }.bind(this), /Width argument passed to \.windowSize\(\) must be a number/
     );
 
     assert.throws(
-      function () {
-        protocol.windowSize('current', 10);
-      }, 'Width and height arguments must be passed as numbers.'
+      function() {
+        Globals.runApiCommand(null, 'windowSize', ['current', 10, 'a']);
+      }.bind(this), /Height argument passed to \.windowSize\(\) must be a number/
     );
 
     assert.throws(
-      function () {
-        protocol.windowSize('current', 10, 'a');
-      }, 'Width and height arguments must be passed as numbers.'
+      function() {
+        Globals.runApiCommand(null, 'windowSize', ['current', 10]);
+      }.bind(this), /Second argument passed to \.windowSize\(\) should be a callback when not passing width and height/
     );
-  },
+  });
 
-  testWindowSizeGet: function (done) {
-    var protocol = this.protocol;
-
-    var command = protocol.windowSize('current', function callback() {
-      done();
+  it('test .windowSize() GET', function(done) {
+    Globals.protocolTest.call(this, {
+      assertion: function(opts) {
+        assert.strictEqual(opts.method, 'GET');
+        assert.strictEqual(opts.path, '/session/1352110219202/window/current/size');
+      },
+      commandName: 'windowSize',
+      args: ['current', function() {
+        done();
+      }]
     });
+  });
 
-    assert.equal(command.request.method, 'GET');
-    assert.equal(command.request.path, '/wd/hub/session/1352110219202/window/current/size');
-  },
-
-  testWindowSizePost: function (done) {
-    var protocol = this.protocol;
-
-    var command = protocol.windowSize('current', 10, 10, function callback() {
-      done();
+  it('test .windowSize() POST', function() {
+    return Globals.protocolTest.call(this, {
+      assertion: function(opts) {
+        assert.strictEqual(opts.method, 'POST');
+        assert.strictEqual(opts.path, '/session/1352110219202/window/current/size');
+        assert.deepEqual(opts.data, {width: 10, height: 10});
+      },
+      commandName: 'windowSize',
+      args: ['current', 10, 10]
     });
+  });
 
-    assert.equal(command.request.method, 'POST');
-    assert.equal(command.data, '{"width":10,"height":10}');
-    assert.equal(command.request.path, '/wd/hub/session/1352110219202/window/current/size');
-  }
+  it('test .windowSize() with W3C Webdriver API - POST', function() {
+    return Globals.protocolTestWebdriver.call(this, {
+      assertion: function(opts) {
+        assert.strictEqual(opts.method, 'POST');
+        assert.deepEqual(opts.data, { width: 10, height: 10 });
+        assert.strictEqual(opts.path, '/session/1352110219202/window/rect');
+      },
+      commandName: 'windowSize',
+      args: ['current', 10, 10]
+    });
+  });
 
+  it('test .windowSize() with W3C Webdriver API - GET', function() {
+    return Globals.protocolTestWebdriver.call(this, {
+      assertion: function(opts) {
+        assert.strictEqual(opts.method, 'GET');
+        assert.strictEqual(opts.path, '/session/1352110219202/window/rect');
+      },
+      commandName: 'windowSize',
+      args: ['current', function() {}]
+    });
+  });
 });
